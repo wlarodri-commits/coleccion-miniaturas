@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>🍾 Colección de Miniaturas — Wlas</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="Colección de Miniaturas — WLAS">
+<meta property="og:description" content="Explora mi colección de botellas de licor en miniatura y descubre cuáles ya tengo.">
+<meta property="og:url" content="https://wlarodri-commits.github.io/coleccion-miniaturas/">
+<meta property="og:image" content="https://wlarodri-commits.github.io/coleccion-miniaturas/img/1.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Colección de Miniaturas — WLAS">
+<meta name="twitter:description" content="Explora mi colección de botellas de licor en miniatura y descubre cuáles ya tengo.">
+<meta name="twitter:image" content="https://wlarodri-commits.github.io/coleccion-miniaturas/img/1.jpg">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --bg:#1a140f; --panel:#241b14; --card:#2b2018; --wood:#5a3a20;
+    --text:#f1e6d8; --muted:#b8a894; --accent:#c98a3f;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box}
+  html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{ height:100%; margin:0; background:var(--bg); color:var(--text); font-family:Georgia, 'Times New Roman', serif; }
+  header{ padding:28px 20px 14px; text-align:center; border-bottom:2px solid var(--wood); }
+  header h1{margin:0 0 4px; font-size:1.6rem; letter-spacing:.5px;}
+  .searchbar{ max-width:520px; margin:18px auto; padding:0 16px; }
+  .searchbar input{
+    width:100%; padding:12px 14px; border-radius:8px; border:1px solid var(--wood);
+    background:var(--panel); color:var(--text); font-size:1rem; font-family:inherit;
+  }
+  .count{ text-align:center; color:var(--muted); font-size:.85rem; margin-bottom:10px;}
+  .grid{
+    display:grid; gap:14px; padding:10px 16px 40px;
+    grid-template-columns:repeat(auto-fill, minmax(150px,1fr));
+    max-width:1100px; margin:0 auto;
+  }
+  .card{ background:var(--card); border:1px solid var(--wood); border-radius:10px; padding:12px 10px; text-align:center; }
+  .cat{ color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
+  .swatch{
+    width:100%; height:170px; margin:0 auto 8px; border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-size:1.3rem; color:#1a140f;
+  }
+  .foto{ width:100%; height:170px; object-fit:contain; background:var(--panel); border-radius:6px; margin-bottom:8px; }
+  .card h3{margin:2px 0 0; font-size:.95rem; line-height:1.2;}
+  .variedad{margin:2px 0 0; font-size:.85rem; font-weight:bold; color:var(--text); line-height:1.2;}
+  .origen{display:block; margin-top:4px; color:var(--muted); font-size:.78rem;}
+  .empty{ text-align:center; color:var(--muted); padding:40px 20px; display:none; }
+  footer{ text-align:center; color:var(--muted); font-size:.75rem; padding:20px; }
+
+  .card{ cursor:pointer; }
+
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.75);
+    display:none; align-items:center; justify-content:center;
+    padding:20px; z-index:50;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal-card{
+    background:var(--card); border:1px solid var(--wood); border-radius:14px;
+    max-width:380px; width:100%; padding:26px 18px 20px; text-align:center;
+    position:relative; max-height:90vh; overflow-y:auto;
+  }
+  .modal-close{
+    position:absolute; top:8px; right:8px; background:none; border:none;
+    color:var(--text); font-size:1.3rem; cursor:pointer; line-height:1;
+    width:38px; height:38px;
+  }
+  .modal-cat{ color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; }
+  .modal-img-wrap{ width:100%; height:260px; margin-bottom:14px; cursor:zoom-in; }
+  .modal-img-wrap img{ width:100%; height:100%; object-fit:contain; background:var(--panel); border-radius:8px; }
+  .modal-card h2{ margin:4px 0; font-size:1.3rem; }
+  .modal-variedad{ margin:2px 0; font-weight:bold; }
+  .modal-origen{ margin:4px 0 0; color:var(--muted); font-size:.9rem; }
+  .modal-hint{ margin-top:12px; color:var(--muted); font-size:.72rem; }
+
+  .lightbox{
+    position:fixed; inset:0; background:rgba(0,0,0,.95); display:none;
+    align-items:center; justify-content:center; z-index:60; padding:10px;
+  }
+  .lightbox.open{ display:flex; }
+  .lightbox img{ max-width:100%; max-height:100%; object-fit:contain; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍾 Colección de Miniaturas</h1>
+</header>
+
+<div class="searchbar">
+  <input id="q" type="text" placeholder="Buscar por marca o tipo (ej: ron, Jägermeister)...">
+</div>
+<div class="count" id="count">Cargando...</div>
+
+<div class="grid" id="grid"></div>
+<p class="empty" id="empty">No se encontró ninguna botella con ese nombre.</p>
+
+<footer>Catálogo creado y actualizado por WLAS</footer>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    <div class="modal-cat" id="modalCat"></div>
+    <div class="modal-img-wrap" id="modalImgWrap"></div>
+    <h2 id="modalMarca"></h2>
+    <p class="modal-variedad" id="modalVariedad"></p>
+    <p class="modal-origen" id="modalOrigen"></p>
+    <p class="modal-hint" id="modalHint">Toca la foto para verla más grande</p>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="modal-close" id="lightboxClose" aria-label="Cerrar">✕</button>
+  <img id="lightboxImg" alt="">
+</div>
+
+<script>
+// Link CSV publicado desde tu Google Sheet (Archivo > Compartir > Publicar en la web > CSV)
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR6mnWTo_qLpduw1jQ5T4bi7DUrYBtviy2Dbrg-MFxeyOLjmAwsIlTjaRF6xfuZg1eTnX4EVmLfQBKQ/pub?gid=0&single=true&output=csv";
+
+let bottles = [];
+
+const grid = document.getElementById('grid');
+const empty = document.getElementById('empty');
+const count = document.getElementById('count');
+const input = document.getElementById('q');
+
+// color determinístico a partir del nombre, para el respaldo si aún no hay foto subida
+function colorFromText(str){
+  let hash = 0;
+  for (let i=0; i<str.length; i++){ hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 45%, 55%)`;
+}
+
+function normalizeKey(k){
+  return k.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+
+function buildBottle(obj){
+  const foto = (obj['foto'] || '').toString().trim();
+  return {
+    category: (obj['categoria'] || '').trim(),
+    marca: (obj['marca'] || '').trim(),
+    variedad: (obj['nombrevariedad'] || obj['variedad'] || '').trim(),
+    origen: (obj['origen'] || '').trim(),
+    img: foto ? `img/${foto}.jpg` : ''
+  };
+}
+
+function render(list){
+  grid.innerHTML = "";
+  list.forEach(b=>{
+    const card = document.createElement('div');
+    card.className='card';
+    const initial = (b.marca || '?').charAt(0).toUpperCase();
+    const color = colorFromText(b.marca || 'x');
+    const visual = b.img
+      ? `<img class="foto" src="${b.img}" alt="${b.marca}" onerror="this.outerHTML='<div class=\\'swatch\\' style=\\'background:${color}\\'>${initial}</div>'">`
+      : `<div class="swatch" style="background:${color}">${initial}</div>`;
+    card.innerHTML = `
+      <div class="cat">${b.category}</div>
+      ${visual}
+      <h3>${b.marca}</h3>
+      ${b.variedad ? `<p class="variedad">${b.variedad}</p>` : ''}
+      ${b.origen ? `<span class="origen">${b.origen}</span>` : ''}
+    `;
+    grid.appendChild(card);
+    card.addEventListener('click', ()=> openModal(b));
+  });
+  empty.style.display = list.length ? 'none' : 'block';
+  count.textContent = list.length + (list.length===1 ? ' botella' : ' botellas');
+}
+
+input.addEventListener('input', ()=>{
+  const q = input.value.trim().toLowerCase();
+  const filtered = bottles.filter(b =>
+    (b.marca||'').toLowerCase().includes(q) ||
+    (b.category||'').toLowerCase().includes(q) ||
+    (b.variedad||'').toLowerCase().includes(q) ||
+    (b.origen||'').toLowerCase().includes(q)
+  );
+  render(filtered);
+});
+
+// ---- Modal de detalle ----
+const modal = document.getElementById('modal');
+const modalImgWrap = document.getElementById('modalImgWrap');
+const modalHint = document.getElementById('modalHint');
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+
+function openModal(b){
+  document.getElementById('modalCat').textContent = b.category || '';
+  document.getElementById('modalMarca').textContent = b.marca || '';
+  document.getElementById('modalVariedad').textContent = b.variedad || '';
+  document.getElementById('modalOrigen').textContent = b.origen || '';
+
+  if (b.img){
+    modalImgWrap.innerHTML = `<img src="${b.img}" alt="${b.marca}" onerror="this.outerHTML='<div class=\\'swatch\\' style=\\'height:100%\\;background:${colorFromText(b.marca||'x')}\\'>${(b.marca||'?').charAt(0).toUpperCase()}</div>'">`;
+    modalHint.style.display = 'block';
+  } else {
+    modalImgWrap.innerHTML = `<div class="swatch" style="height:100%;background:${colorFromText(b.marca||'x')}">${(b.marca||'?').charAt(0).toUpperCase()}</div>`;
+    modalHint.style.display = 'none';
+  }
+  modal.classList.add('open');
+}
+
+function closeModal(){
+  modal.classList.remove('open');
+  closeLightbox();
+}
+
+modalImgWrap.addEventListener('click', (e)=>{
+  if (e.target.tagName === 'IMG') openLightbox(e.target.src);
+});
+
+function openLightbox(src){
+  lightboxImg.src = src;
+  lightbox.classList.add('open');
+}
+function closeLightbox(){
+  lightbox.classList.remove('open');
+}
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+modal.addEventListener('click', (e)=>{ if (e.target === modal) closeModal(); });
+lightbox.addEventListener('click', (e)=>{ if (e.target === lightbox || e.target.tagName==='IMG') closeLightbox(); });
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape'){ closeLightbox(); closeModal(); }
+});
+
+async function loadData(){
+  try {
+    const res = await fetch(CSV_URL);
+    const buf = await res.arrayBuffer();
+    const text = new TextDecoder('utf-8').decode(buf);
+    const parsed = Papa.parse(text.trim(), { skipEmptyLines:true });
+    const rows = parsed.data;
+
+    const headerIndex = rows.findIndex(r =>
+      r.some(cell => normalizeKey((cell||'').toString()) === 'marca')
+    );
+    if (headerIndex === -1) throw new Error('sin encabezados reconocibles');
+
+    const headers = rows[headerIndex].map(h => normalizeKey((h||'').toString()));
+    const dataRows = rows.slice(headerIndex + 1);
+
+    bottles = dataRows.map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (r[i] || '').toString().trim(); });
+      return buildBottle(obj);
+    }).filter(b => b.marca);
+
+    if (bottles.length === 0){
+      count.textContent = '';
+      grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);">El CSV cargó pero no se reconoció ninguna fila con Marca.</p>';
+      empty.style.display = 'none';
+    } else {
+      render(bottles);
+    }
+  } catch (e){
+    count.textContent = '';
+    grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);">No se pudo cargar la lista desde el Sheet. Si estás viendo esto en la vista previa de Claude, esto es esperado: va a funcionar una vez que subas el archivo a GitHub Pages.</p>';
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
